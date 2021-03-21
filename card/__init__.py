@@ -14,8 +14,6 @@ def setup(device='tpu'):
     elif device=='gpu':
         strategy = tf.distribute.MirroredStrategy()
 
-    # tf.distribute.experimental_set_strategy(strategy)
-    print('Number of replicas:', strategy.num_replicas_in_sync)
-
-    return strategy
+    tf.distribute.experimental_set_strategy(strategy)
+    # print('Number of replicas:', strategy.num_replicas_in_sync)
 
