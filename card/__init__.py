@@ -16,6 +16,7 @@ def setup(device='tpu'):
 
     tf.distribute.experimental_set_strategy(strategy)
     print('Number of replicas:', strategy.num_replicas_in_sync)
+    print(type(strategy))
 
     return strategy
 
