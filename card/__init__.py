@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+
+# to fix
 def setup(device='tpu'):
     if device=='tpu':
         try:
