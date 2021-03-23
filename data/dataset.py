@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import datasets
 
 def ready_dataset(name, normalize=True):
 
@@ -11,7 +10,7 @@ def ready_dataset(name, normalize=True):
 
     if name == 'cifar10':
         num_classes = 10
-        (x_train, y_train), (x_test, y_test) = datasets.cifar10.loaddata()
+        (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
         x_train.astype('float32')
         y_train.astype('float32')
 
