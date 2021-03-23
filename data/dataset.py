@@ -10,8 +10,8 @@ def ready_dataset(name, normalize=True):
     if name == 'cifar10':
         num_classes = 10
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-        x_train = x_train.astype('float32')
-        x_test = x_test.astype('float32')
+        x_train.astype('float32')
+        x_test.astype('float32')
         x_train = x_train / 255.
         x_test = x_test / 255.
 
