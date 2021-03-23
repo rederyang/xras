@@ -1,3 +1,7 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import datasets
+
 def ready_dataset(name, normalize=True):
 
     def normalize(x, normal_params):
@@ -15,8 +19,8 @@ def ready_dataset(name, normalize=True):
             cifar10_np = {}
             cifar10_np['mean'] = [0.4914, 0.4822, 0.4465]
             cifar10_np['std'] = [0.247, 0.243, 0.261]
-            x_train = _normalize(x_train, cifar10_np)
-            x_test = _normalize(x_test, cifar10_np)
+            x_train = normalize(x_train, cifar10_np)
+            x_test = normalize(x_test, cifar10_np)
 
         y_train = keras.utils.to_categorical(y_train, num_classes) # to category
         y_test = keras.utils.to_categorical(y_test, num_classes)
