@@ -1,5 +1,3 @@
-
-
 def ready_dataset(name, normalize=True):
 
     def normalize(x, normal_params):
