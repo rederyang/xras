@@ -20,8 +20,8 @@ def ready_dataset(name, normalize=True):
             x_train = normalize(x_train, cifar10_np)
             x_test = normalize(x_test, cifar10_np)
 
-        y_train = keras.utils.to_categorical(y_train, num_classes) # to category
-        y_test = keras.utils.to_categorical(y_test, num_classes)
+        y_train = tf.keras.utils.to_categorical(y_train, num_classes) # to category
+        y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
         ds_train = tf.data.Dataset.from_tensor_slices((x_train, y_train))
         ds_test = tf.data.Dataset.from_tensor_slices((x_train, y_train))
