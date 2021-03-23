@@ -10,8 +10,8 @@ def cifar10():
 
     x_train = (x_train - [0.4914, 0.4822, 0.4465]) / [0.247, 0.243, 0.261]
     x_test = (x_test - [0.4914, 0.4822, 0.4465]) / [0.247, 0.243, 0.261]
-    y_train = keras.utils.to_categorical(y_train, NUM_CLASSES)
-    y_test = keras.utils.to_categorical(y_test, NUM_CLASSES)
+    y_train = keras.utils.to_categorical(y_train, 10)
+    y_test = keras.utils.to_categorical(y_test, 10)
 
     ds_train = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     ds_test = tf.data.Dataset.from_tensor_slices((x_test, y_test))
