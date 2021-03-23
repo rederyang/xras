@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tf import keras
+from tensorflow import keras
 
 def cifar10():
     (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
