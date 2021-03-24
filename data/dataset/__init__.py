@@ -1,19 +1,17 @@
 import tensorflow as tf
+from tensorflow import keras
 
-def prepare(ds, batch_size, shuffle=False, augment=False, transform=None):
+def prepare(ds, batch_size, transform, shuffle=False):
     if shuffle:
         ds = ds.shuffle(len(ds)) # a large enough buffer size is required 
     
     ds = ds.batch(batch_size)
 
-    if augment:
+    if transform:
         ds = ds.map(lambda x, y: (transform(x, training=True), y),
                     num_parallel_calls=tf.data.AUTOTUNE)
     
     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
-
-import tensorflow as tf
-from tensorflow import keras
 
 def cifar10():
     (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
