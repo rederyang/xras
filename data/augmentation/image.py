@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow import keras
 
 def padding(padding):
     def pad_image(x):
