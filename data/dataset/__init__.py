@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-def prepare(ds, batch_size, transform, shuffle=False):
+def prepare(ds, batch_size, transform=None, shuffle=False):
     if shuffle:
         ds = ds.shuffle(len(ds)) # a large enough buffer size is required 
     
