@@ -9,3 +9,4 @@ def padding(padding=4):
         return x
 
     return keras.layers.Lambda(lambda x: pad_image(x))
+
