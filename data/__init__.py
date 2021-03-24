@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def prepare(ds, batch_size, shuffle=False, augment=False, transform):
+def prepare(ds, batch_size, shuffle=False, augment=False, transform=None):
     if shuffle:
         ds = ds.shuffle(len(ds)) # a large enough buffer size is required 
     
