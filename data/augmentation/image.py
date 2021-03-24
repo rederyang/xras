@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
-def padding(padding):
+def padding(padding=4):
     def pad_image(x):
         paddings = [[0, 0], [padding, padding], [padding, padding], [0, 0]]
         paddings = tf.constant(paddings)
