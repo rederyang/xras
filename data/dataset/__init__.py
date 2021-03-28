@@ -13,7 +13,7 @@ def prepare(ds, batch_size, transform=None, shuffle=False):
     
     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
 
-def cifar10():
+def cifar10(wrapped=True):
     (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
     x_train.astype('float32')
     x_test.astype('float32')
@@ -25,7 +25,9 @@ def cifar10():
     y_train = keras.utils.to_categorical(y_train, 10)
     y_test = keras.utils.to_categorical(y_test, 10)
 
-    ds_train = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-    ds_test = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-
-    return ds_train, ds_test
+    if wrapped:
+        ds_train = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        ds_test = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+        return ds_train, ds_test
+    else:
+        return x_train, y_train, x_test, y_test
