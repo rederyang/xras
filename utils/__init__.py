@@ -47,7 +47,7 @@ def plot_from_history(history, acc_to_error=False):
         'train':history.history['accuracy'],
         'val':history.history['val_accuracy']
         }
-        plot_log(error, title='Accuracy', yticks=np.arange(0., 1., 0.1), savefig='acc.jpg')
+        plot_log(acc, title='Accuracy', yticks=np.arange(0., 1., 0.1), savefig='acc.jpg')
 
     loss={
         'train':history.history['loss'],
