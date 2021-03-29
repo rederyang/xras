@@ -33,3 +33,25 @@ def plot_log(log, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, xt
     plt.grid()
     plt.savefig(savefig)
     plt.show()
+
+def plot_from_history(history, acc_to_error=False):
+
+    if acc_to_error:
+        error={
+        'train':[1 - x for x in history.history['accuracy']],
+        'val':[1 - x for x in history.history['val_accuracy']] 
+        }
+        plot_log(error, title='Error', yticks=np.arange(0., 1., 0.1), savefig='error.jpg')
+    else:
+        acc={
+        'train':history.history['accuracy'],
+        'val':history.history['val_accuracy']
+        }
+        plot_log(error, title='Accuracy', yticks=np.arange(0., 1., 0.1), savefig='acc.jpg')
+
+    loss={
+        'train':history.history['loss'],
+        'val':history.history['val_loss']    
+    }
+    
+    plot_log(loss, title='Loss', savefig='loss.jpg')
