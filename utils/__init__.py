@@ -4,6 +4,7 @@ import numpy as np
 import numpy as np
 import tensorflow as tf
 from keras.utils import plot_model
+from matplotlib import pyplot as plt
 
 import matplotlib.pyplot as plt
 
@@ -13,7 +14,7 @@ def set_seed(seed=0):
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
-def plot_model(model, file_name=None):
+def eye_model(model, file_name=None):
     plot_model(model, to_file=file_name, show_shapes=True, show_layer_names=False)
 
 def plot_log(log, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, xticks=None, yticks=None, # log: dict like {'legend': log}
