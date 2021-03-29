@@ -16,7 +16,7 @@ def set_seed(seed=0):
 def plot_model(model, file_name=None):
     plot_model(model, to_file=file_name, show_shapes=True, show_layer_names=False)
 
-def plot_log(log, , title=None, xlabel='Epoch', ylabel=None, xlim=None, ylim=None xticks=None, yticks=None, # log: dict like {'legend': log}
+def plot_log(log, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None xticks=None, yticks=None, # log: dict like {'legend': log}
             savefig=None, figsize=(4,3), dpi=160):
     plt.figure(figsize=(4,3), dpi=160)
     for seq in log.values():
