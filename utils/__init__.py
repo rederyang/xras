@@ -15,7 +15,10 @@ def set_seed(seed=0):
     tf.random.set_seed(seed)
 
 def view_model(model, file_name=None):
-    plot_model(model, to_file=file_name, show_shapes=True, show_layer_names=False)
+    if file_name:
+        plot_model(model, to_file=file_name, show_shapes=True, show_layer_names=False)
+    else:
+        plot_model(model, show_shapes=True)
 
 def plot_log(log, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, xticks=None, yticks=None, # log: dict like {'legend': log}
             savefig=None, figsize=(4,3), dpi=160):
