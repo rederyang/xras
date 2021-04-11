@@ -13,6 +13,7 @@ import math
 # 优化器 RMSprop
 # weight decay: very little to depthwise conv
 # 特性参数: width multiplier alpha, resolution multiplier rho
+# 官方实现中激活函数使用relu6，是为了适合低精度运算，在此忽略
 
 def MobileNet_V1(alpha=1.0, rho=7.0, weight_decay=0): # by default is 32x32, times 7 = 224(imagenet spatial size)
 
