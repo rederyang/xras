@@ -7,7 +7,7 @@ from keras.regularizers import l2
 from keras.initializers import he_normal
 import math
 
-# MobileNet
+# MobileNet V1
 # depth 固定
 # MobileNet 使用较传统的后激活方式 (没有shortcut， 当然用后激活)
 # weight decay: very little to depthwise conv
