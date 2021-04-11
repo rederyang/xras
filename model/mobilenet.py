@@ -10,12 +10,11 @@ import math
 # MobileNet
 # depth 固定
 # MobileNet 使用较传统的后激活方式 (没有shortcut， 当然用后激活)
-# 优化器 RMSprop
 # weight decay: very little to depthwise conv
 # 特性参数: width multiplier alpha, resolution multiplier rho
-# 官方实现中激活函数使用relu6，是为了适合低精度运算，在此忽略
+# 在第一个conv没有进行下采样，与原文中结构不同
 
-def MobileNet_V1(alpha=1.0, rho=7.0, weight_decay=0): # by default is 32x32, times 7 = 224(imagenet spatial size)
+def MobileNet_V1(alpha=1.0, rho=1.0, weight_decay=0): # by default is 224*224
 
   weight_decay *= 0.5
 
@@ -50,11 +49,11 @@ def MobileNet_V1(alpha=1.0, rho=7.0, weight_decay=0): # by default is 32x32, tim
   num_block = [1, 2, 2, 6, 2]
   num_filter = [cround(num * alpha) for num in num_filter]
 
-  input = Input((32, 32, 3))
+  input = Input((224, 224, 3))
 
-  x = Resizing(cround(32 * rho), cround(32 * rho))(input) # rho = 7， cifar->imagenet spatial size
+  x = Resizing(cround(224 * rho), cround(224 * rho))(input) # resolution multiplier
 
-  x = Conv2D(32, (3, 3), (1, 1), 'same', # 为了适合cifar，不在第一层进行降采样
+  x = Conv2D(32, (3, 3), (1, 1), 'same', # 注意：这里没有进行降采样，与原文中不同
              kernel_initializer=he_normal,
              kernel_regularizer=l2(weight_decay),
              use_bias=False)(input) # ->batch_size, (224, 224), 16
