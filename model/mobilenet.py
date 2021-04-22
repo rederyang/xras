@@ -52,14 +52,14 @@ def MobileNet_V1(alpha=1.0, rho=1.0, weight_decay=0): # by default is 224*224
   num_block = [1, 2, 2, 6, 2]
   num_filter = [cround(num * alpha) for num in num_filter]
 
-  input = Input((224, 224, 3))
+  input = Input((32, 32, 3))
 
   x = Resizing(cround(224 * rho), cround(224 * rho))(input) # resolution multiplier
 
   x = Conv2D(32, (3, 3), (1, 1), 'same', # 注意：这里没有进行降采样，与原文中不同
              kernel_initializer=he_normal,
              kernel_regularizer=l2(weight_decay),
-             use_bias=False)(input) # ->batch_size, (224, 224), 16
+             use_bias=False)(x) # ->batch_size, (224, 224), 16
   x = BatchNormalization(momentum=0.9)(x) 
   # x = Activation('relu')(x)
   x = tf.nn.relu6(x)
