@@ -7,6 +7,5 @@ def padding(padding=4):
         paddings = tf.constant(paddings)
         x = tf.pad(x, paddings, 'REFLECT')
         return x
-
     return keras.layers.Lambda(lambda x: pad_image(x))
 
