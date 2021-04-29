@@ -8,7 +8,7 @@ import math
 
 # DenseNet
 # l: layers, k: growth rate, theta: compression factor
-# for DenseNet BC type: bottleneck=True, 0 < theta < 1
+# for DenseNet BC type: bottleneck=True, 0 < theta < 1 (typically 0.5)
 # DenseNet的block较特殊，与一般的resnet相比少一层conv
 
 def DenseNet(l=40, k=12, bottleneck=False, theta=1, weight_decay=1e-4):
