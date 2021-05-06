@@ -10,7 +10,7 @@ from keras.initializers import he_normal
 
 def WideResNet(depth=28, k=1, weight_decay=5e-4, dropout=0.3):
 
-  n = (depth - 4) // (2 * 3) # 这里为什么是depth - 4 ？？？
+  n = (depth - 4) // (2 * 3) # depth - 4 （conv1 + dense + 2 * proj）
   weight_decay *= 0.5
 
   def shortcut(x, input_channels, output_channels, downsampling):
