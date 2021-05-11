@@ -141,30 +141,40 @@ def Resnet_V2_bottleneck(depth=29, weight_decay=1e-4):
   def shortcut_B(x, in_filter, out_filter, downsampling):
     if in_filter != out_filter: # proj to match channel dimension
       x = Conv2D(out_filter, (1, 1), (2, 2) if downsampling else (1, 1),
+                 use_bias=False,
                  kernel_initializer=he_normal,
                  kernel_regularizer=l2(weight_decay))(x)
     return x
 
   def bottleneck(x, in_filter, out_filter, downsampling):
     o = x
-    x = BatchNormalization(momentum=0.9)(x)
+    x = BatchNormalization(momentum=0.9,
+                beta_regularizer=l2(weight_decay),
+                gamma_regularizer=l2(weight_decay))(x)
     x = Activation('relu')(x) # 进行了proj，所以在split之前act
     if in_filter != out_filter:
       o = x
     
     x = Conv2D(out_filter / 4, (1, 1), (2, 2) if downsampling else (1, 1),
+                use_bias=False,
                 kernel_initializer=he_normal,
                 kernel_regularizer=l2(weight_decay))(x)
 
-    x = BatchNormalization(momentum=0.9)(x)
+    x = BatchNormalization(momentum=0.9,
+                beta_regularizer=l2(weight_decay),
+                gamma_regularizer=l2(weight_decay))(x)
     x = Activation('relu')(x)
     x = Conv2D(out_filter / 4, (3, 3), (1, 1), padding='same',
+               use_bias=False,
                kernel_initializer=he_normal,
                kernel_regularizer=l2(weight_decay))(x)
 
-    x = BatchNormalization(momentum=0.9)(x)
+    x = BatchNormalization(momentum=0.9,
+                beta_regularizer=l2(weight_decay),
+                gamma_regularizer=l2(weight_decay))(x)
     x = Activation('relu')(x)
     x = Conv2D(out_filter, (1, 1), (1, 1),
+              use_bias=False,
               kernel_initializer=he_normal,
               kernel_regularizer=l2(weight_decay))(x)
     
@@ -182,17 +192,21 @@ def Resnet_V2_bottleneck(depth=29, weight_decay=1e-4):
   input = Input((32, 32, 3))
 
   x = Conv2D(16, (3, 3), (1, 1), 'same',
+             use_bias=False,
              kernel_initializer=he_normal,
              kernel_regularizer=l2(weight_decay))(input) # ->batch_size, (32, 32), num_filter[0]
 
   x = layer(x, bottleneck, 16, num_filter[0], False) # ->batch_size, (32, 32), 64
   x = layer(x, bottleneck, num_filter[0], num_filter[1], True) # ->batch_size, (16, 16), 128
   x = layer(x, bottleneck, num_filter[1], num_filter[2], True) # ->batch_size, (8, 8), 256
-  x = BatchNormalization(momentum=0.9)(x)
+  x = BatchNormalization(momentum=0.9,
+              beta_regularizer=l2(weight_decay),
+              gamma_regularizer=l2(weight_decay))(x)
   x = Activation('relu')(x)
 
   x = GlobalAveragePooling2D()(x) # ->batch_size, num_filter[2]
   x = Dense(10, activation='softmax',
+            use_bias=False,
             kernel_initializer=he_normal,
             kernel_regularizer=l2(weight_decay))(x)
 
