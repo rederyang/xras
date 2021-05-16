@@ -1,7 +1,7 @@
 import tensorflow_datasets as tfds
 
-def load_voc_dataset(large=False):
-    if not large:
+def load_voc_dataset(sub=True):
+    if sub:
         ds_train = tfds.load('voc/2007', split='train+validation', shuffle_files=True)
         ds_val = tfds.load('voc/2007', split='test')
     else:
@@ -13,8 +13,6 @@ def load_voc_dataset(large=False):
     return ds_train, ds_val
 
 
-# if __name__ == '__main__':
-#     pass
         
 
 

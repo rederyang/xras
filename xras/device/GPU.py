@@ -1,4 +1,4 @@
 import tensorflow as tf
 
-def deploy_gpu():
+def deploy():
     return tf.distribute.MirroredStrategy()

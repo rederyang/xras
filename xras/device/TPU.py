@@ -1,7 +1,7 @@
 import os
 import tensorflow as tf
 
-def deploy_tpu():
+def deploy():
     tpu_address = os.environ.get("COLAB_TPU_ADDR")
     if tpu_address:
         tpu_address = "grpc://" + tpu_address
