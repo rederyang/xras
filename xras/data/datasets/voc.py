@@ -1,4 +1,6 @@
+from numpy.core.numeric import base_repr
 import tensorflow_datasets as tfds
+import numpy as np
 import math
 
 '''TODO:
@@ -18,6 +20,18 @@ def load_voc_dataset(sub=True):
 
     return ds_train, ds_val
 
+'''TODO:
+    add data augmentation
+'''
+def transform():
+    '''decode elems in the original dataset and match 
+    args:
+        the original dataset
+    returns:
+        a new dataset, each elem is a pair of image and targets
+    '''
+    
+
 
 '''TODO:
     1. check where to add the 'bgd' class - might be in the match function
@@ -27,7 +41,7 @@ def decode(elem):
     ''' to decode an element from voc dataset provided by tfds
     args:
         elem
-            an element from voc dataset provided by tfdd
+            an element from voc dataset provided by tfds
     returns:
         image 
             tf.Tensor, the image of the elem
@@ -46,36 +60,67 @@ def decode(elem):
 
 
 def cc2bc(cc):
-    '''convert a center-size coords to a boundary coords'''
-    x_c, y_c, w, h = cc
-    x_min = x_c - w / 2.
-    x_max = x_min + w
-    y_min = y_c - h / 2.
-    y_max = y_min + h
+    '''convert a group of center-size coords to boundary coords'''
+    x_min = cc[:, 0] - cc[:, 2] / 2.
+    x_max = x_min + cc[:, 2]
+    y_min = cc[:, 1] - cc[:, 3] / 2.
+    y_max = y_min + cc[:, 3]
     
-    return [x_min, y_min, x_max, y_max]
+    return np.stack([x_min, y_min, x_max, y_max], -1)
 
-
-def cc2bc(bc):
-    '''convert a boundary coords to a center-size coords'''
-    x_min, y_min, x_max, y_max = bc
-    x_c = (x_max - x_min) / 2.
-    y_c = (y_max - y_min) / 2.
-    w = x_max - x_min
-    h = y_max - y_min
+def bc2cc(bc):
+    '''convert a group of coords to center-size coords'''
+    x_c = (bc[:, 2] - bc[:, 0]) / 2.
+    y_c = (bc[:, 3] - bc[:, 1]) / 2.
+    w = bc[:, 2] - bc[:, 0]
+    h = bc[:, 3] - bc[:, 1]
     
-    return [x_c, y_c, w, h]
-
+    return np.stack([x_c, y_c, w, h], -1)
 
 def cal_iou(bboxes_a, bboxes_b):
     '''calculate iou betwwen two groups of bboxes
     args:
         bboxes_a
-            a list of bbox coords
+            a numpy array of bbox coords (with boundary coords)
+        bboxes_b
+            a numpy array of bbox coords (with boundary coords)
+        the two array should have the same shape (None, 4)
     returns:
-        a matrix of shape [size(bboxes_a), size(bboxes_b)]
+        a numpy array of shape (None, 1)
     '''
+
+    max_min = np.min(bboxes_a[:, 2:], bboxes_b[:, 2:])
+    min_max = np.max(bboxes_a[:, :2], bboxes_b[:, :2])
+
+    mul = (max_min - min_max)
+    mul = mul * (mul > 0)
+    inter = mul[:, 0] * mul[:, 1]
+
+    union = (bboxes_a[:, 2] - bboxes_a[:, 0]) * (bboxes_a[:, 3] - bboxes_a[:, 1]) + \
+            (bboxes_b[:, 2] - bboxes_b[:, 0]) * (bboxes_b[:, 3] - bboxes_b[:, 1]) - inter
+
+    iou = inter / union
     
+    return iou
+
+def cal_offset(d_bboxes, g_bboxes):
+    '''calculate offset from d_bboxes to g_bboxes
+    args:
+        bboxes_a
+            a numpy array of bbox coords (with center-size coords)
+        bboxes_b
+            a numpy array of bbox coords (with center-size coords)
+        the two array should have the same shape (None, 4)
+    returns:
+        a numpy array of shape (None, 4)
+    '''
+
+    c_x_offsets = (g_bboxes[:, 0] - d_bboxes[:, 0]) / d_bboxes[:, 0]
+    c_y_offsets = (g_bboxes[:, 1] - d_bboxes[:, 1]) / d_bboxes[:, 1]
+    w_offsets = np.log(g_bboxes[:, 2] / d_bboxes[:, 2])
+    h_offsets = np.log(g_bboxes[:, 3] / d_bboxes[:, 3])
+
+    return np.stack([c_x_offsets, c_y_offsets, w_offsets, h_offsets], -1)
 
 def match(anchors, gts):
     '''map anchors to gts
@@ -86,25 +131,65 @@ def match(anchors, gts):
             a list of dicts, as defined in the decode function
     returns:
         targets
-            a list of dicts, in the same form of gts, for each target
-            target['offset'] is [g_c_x, g_c_y, g_w, g_h]
+            a list of target,  for each target
             target['label'] is the target class
+            target['offset'] is [g_c_x, g_c_y, g_w, g_h]
     '''
+    anchor_bboxes = np.array([anchor['bbox'] for anchor in anchors])
+    gt_bboxes = np.array([gt['bbox'] for gt in gts])
 
-    anchor_bboxes = [anchor['bbox'] for anchor in anchors]
-    gt_bboxes = [gt['bbox'] for gt in gts]
+    ious = []
+    num_of_anchors = anchor_bboxes.shape[0]
 
-    ious = cal_iou(anchor_bboxes, gt_bboxes)
-
-
+    for gt_bbox in gt_bboxes:
+        repeated_gt_bbox = np.tile(gt_bbox, (num_of_anchors, 1))
+        cur_ious = cal_iou(repeated_gt_bbox, anchor_bboxes)
+        ious.append(cur_ious)
+    
+    ious = np.stack(ious, -1)
 
     # two rules to do the match depending on ious
     # 1. anchor-wise 2. gt-wise
+
+    labels = []
+    target_bboxes = []
     
     # anchor-wise
-    for anchor in anchors:
-        pass
-        
+    for i, anchor in enumerate(anchors):
+        max_iou_gt_idx = np.argmax(ious[i, :])
+        labels.append(gts[max_iou_gt_idx]['label'])
+        target_bboxes.append(gts[max_iou_gt_idx]['bbox'])
+
+    # up to now, all anchors should have a label and a target bbox
+    
+    # gt-wise
+    for i, gt in enumerate(gts):
+        max_iou_anchor_idx = np.argmax(ious[:, i])
+        if max_iou_anchor_idx <= 0.5:
+            continue
+        labels[max_iou_anchor_idx] = gt['label']
+        target_bboxes[max_iou_anchor_idx] = gt['bbox']
+    target_bboxes = np.array(target_bboxes)
+
+    # turn the coords to center-size form
+    anchor_bboxes = bc2cc(anchor_bboxes)
+    target_bboxes = bc2cc(target_bboxes)
+
+    offsets = cal_offset(anchor_bboxes, target_bboxes)
+
+    # now we have tow lists, labels and offsets, 
+    # the order is the same as the corresponding anchors'
+
+    targets = []
+    for label, offset in zip(labels, offsets):
+        targets.append(
+            {
+                'label':label,
+                'offset':offset
+            }
+        )
+    
+    return targets
 
 '''TODO:
     1. make sure the order of each anchor whether correspond
