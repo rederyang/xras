@@ -1,6 +1,7 @@
 from numpy.core.numeric import base_repr
 import tensorflow_datasets as tfds
-import numpy as np
+# import numpy as np
+import tensorflow as tf
 import math
 
 '''TODO:
@@ -23,8 +24,8 @@ def load_voc_dataset(sub=True):
 '''TODO:
     add data augmentation
 '''
-def transform():
-    '''decode elems in the original dataset and match 
+def prepare():
+    '''decode elems in the original dataset and do match
     args:
         the original dataset
     returns:
@@ -51,12 +52,12 @@ def decode(elem):
             format of center-size coords
     '''
     image = elem['image']
-    gt = {
+    gts = {
         'bbox': elem['object']['bbox'],
         'label': elem['object']['label']
     }
 
-    return image, gt
+    return image, gts
 
 
 def cc2bc(cc):
@@ -66,7 +67,7 @@ def cc2bc(cc):
     y_min = cc[:, 1] - cc[:, 3] / 2.
     y_max = y_min + cc[:, 3]
     
-    return np.stack([x_min, y_min, x_max, y_max], -1)
+    return tf.stack([x_min, y_min, x_max, y_max], -1)
 
 def bc2cc(bc):
     '''convert a group of coords to center-size coords'''
@@ -75,7 +76,7 @@ def bc2cc(bc):
     w = bc[:, 2] - bc[:, 0]
     h = bc[:, 3] - bc[:, 1]
     
-    return np.stack([x_c, y_c, w, h], -1)
+    return tf.stack([x_c, y_c, w, h], -1)
 
 def cal_iou(bboxes_a, bboxes_b):
     '''calculate iou betwwen two groups of bboxes
@@ -89,8 +90,8 @@ def cal_iou(bboxes_a, bboxes_b):
         a numpy array of shape (None, 1)
     '''
 
-    max_min = np.min(bboxes_a[:, 2:], bboxes_b[:, 2:])
-    min_max = np.max(bboxes_a[:, :2], bboxes_b[:, :2])
+    max_min = tf.min(bboxes_a[:, 2:], bboxes_b[:, 2:])
+    min_max = tf.max(bboxes_a[:, :2], bboxes_b[:, :2])
 
     mul = (max_min - min_max)
     mul = mul * (mul > 0)
@@ -117,36 +118,37 @@ def cal_offset(d_bboxes, g_bboxes):
 
     c_x_offsets = (g_bboxes[:, 0] - d_bboxes[:, 0]) / d_bboxes[:, 0]
     c_y_offsets = (g_bboxes[:, 1] - d_bboxes[:, 1]) / d_bboxes[:, 1]
-    w_offsets = np.log(g_bboxes[:, 2] / d_bboxes[:, 2])
-    h_offsets = np.log(g_bboxes[:, 3] / d_bboxes[:, 3])
+    w_offsets = tf.math.log(g_bboxes[:, 2] / d_bboxes[:, 2])
+    h_offsets = tf.math.log(g_bboxes[:, 3] / d_bboxes[:, 3])
 
-    return np.stack([c_x_offsets, c_y_offsets, w_offsets, h_offsets], -1)
+    return tf.stack([c_x_offsets, c_y_offsets, w_offsets, h_offsets], -1)
 
-def match(anchors, gts):
+def match(anchor_bboxes, gts):
     '''map anchors to gts
     args:
-        anchors
-            a list of dicts, as defined in the SSDAnchorGenerator
+        anchor_bbox
+            a list of tf.constant, as defined in the SSDAnchorGenerator
         gts
-            a list of dicts, as defined in the decode function
+            a dict, as defined in the decode function
     returns:
         targets
             a list of target,  for each target
             target['label'] is the target class
             target['offset'] is [g_c_x, g_c_y, g_w, g_h]
     '''
-    anchor_bboxes = np.array([anchor['bbox'] for anchor in anchors])
-    gt_bboxes = np.array([gt['bbox'] for gt in gts])
+    gt_bboxes = gts['bbox']
+    gt_labels = gts['label']
 
     ious = []
     num_of_anchors = anchor_bboxes.shape[0]
 
+    # TODO: tile and reshape
     for gt_bbox in gt_bboxes:
         repeated_gt_bbox = np.tile(gt_bbox, (num_of_anchors, 1))
         cur_ious = cal_iou(repeated_gt_bbox, anchor_bboxes)
         ious.append(cur_ious)
     
-    ious = np.stack(ious, -1)
+    ious = tf.stack(ious, -1)
 
     # two rules to do the match depending on ious
     # 1. anchor-wise 2. gt-wise
@@ -155,14 +157,17 @@ def match(anchors, gts):
     target_bboxes = []
     
     # anchor-wise
-    for i, anchor in enumerate(anchors):
-        max_iou_gt_idx = np.argmax(ious[i, :])
-        labels.append(gts[max_iou_gt_idx]['label'])
-        target_bboxes.append(gts[max_iou_gt_idx]['bbox'])
+    max_iou_gt_idxs = tf.math.argmax(ious, axis=-1)
+    target_labels = tf.gather(gt_labels, max_iou_gt_idxs)
+    target_bboxes = tf.gather(gt_bboxes, max_iou_gt_idxs)
 
     # up to now, all anchors should have a label and a target bbox
     
     # gt-wise
+    max_iou_anchor_idxs = tf.math.argmax(ious, axis=0)
+    target_labels = tf.gather(gt_labels, max_iou_gt_idxs)
+    target_bboxes = tf.gather(gt_bboxes, max_iou_gt_idxs)
+
     for i, gt in enumerate(gts):
         max_iou_anchor_idx = np.argmax(ious[:, i])
         if max_iou_anchor_idx <= 0.5:
@@ -226,8 +231,9 @@ class SSDAnchorGenerator:
             subset
                 bool, whether to use the simple aspects
         returns:
-            a list of dict
-                each dict['bbox'] is the coords of the anchor,  in the order of different setting, width, height
+            a list of tf.constant
+                each elem is the coords of the anchor,  anchors are 
+                in the order of different setting, width, height
         '''
         anchors = []
 
@@ -243,7 +249,7 @@ class SSDAnchorGenerator:
             for j in range(size[0]): # size is in the order of (H, W), height direction
                 for i in range(size[1]): # size is in the order of (H, W), width direction
                     c_x_y = [(i + 0.5) / size[1], (j + 0.5) / size[0]] 
-                    anchors.append({'bbox':c_x_y + list(w_h)}) # [x_c, y_c, w, h]
+                    anchors.append(tf.constant(c_x_y + list(w_h))) # [x_c, y_c, w, h]
         return anchors
 
     def make_anchors_for_multi_fm(self):
